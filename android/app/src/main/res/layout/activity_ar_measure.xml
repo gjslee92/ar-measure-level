@@ -97,15 +97,17 @@
             android:textSize="13sp" />
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
             android:orientation="horizontal">
-            <Button android:id="@+id/btnUnit" style="@style/Widget.ARMeasure.ArButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="4dp" android:text="단위" />
-            <Button android:id="@+id/btnUndo" style="@style/Widget.ARMeasure.ArButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="4dp" android:text="되돌리기" />
-            <Button android:id="@+id/btnNewSeg" style="@style/Widget.ARMeasure.ArButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="4dp" android:text="새 구간" />
-            <Button android:id="@+id/btnReset" style="@style/Widget.ARMeasure.ArButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="4dp" android:text="초기화" />
-            <Button android:id="@+id/btnSave" style="@style/Widget.ARMeasure.Button.Primary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="44dp" android:text="저장" />
+            <Button android:id="@+id/btnUnit" style="@style/Widget.ARMeasure.ArButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp" android:minWidth="0dp" android:paddingStart="2dp" android:paddingEnd="2dp" android:textSize="13sp" android:maxLines="1" android:text="단위" />
+            <Button android:id="@+id/btnUndo" style="@style/Widget.ARMeasure.ArButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp" android:minWidth="0dp" android:paddingStart="2dp" android:paddingEnd="2dp" android:textSize="13sp" android:maxLines="1" android:text="되돌리기" />
+            <Button android:id="@+id/btnNewSeg" style="@style/Widget.ARMeasure.ArButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp" android:minWidth="0dp" android:paddingStart="2dp" android:paddingEnd="2dp" android:textSize="13sp" android:maxLines="1" android:text="새 구간" />
+            <Button android:id="@+id/btnReset" style="@style/Widget.ARMeasure.ArButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp" android:minWidth="0dp" android:paddingStart="2dp" android:paddingEnd="2dp" android:textSize="13sp" android:maxLines="1" android:text="초기화" />
+            <Button android:id="@+id/btnSave" style="@style/Widget.ARMeasure.ArButton.Save" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp" android:minWidth="0dp" android:paddingStart="2dp" android:paddingEnd="2dp" android:textSize="13sp" android:maxLines="1" android:text="저장" />
         </LinearLayout>
 
         <ImageButton
