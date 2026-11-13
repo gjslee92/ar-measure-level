@@ -42,6 +42,7 @@ import com.google.ar.core.Frame
 import com.google.ar.core.HitResult
 import com.google.ar.core.DepthPoint
 import com.google.ar.core.Plane
+import com.google.ar.core.Point
 import com.google.ar.core.Session
 import com.google.ar.core.TrackingFailureReason
 import com.google.ar.core.TrackingState
@@ -324,21 +325,28 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
             }
         }
 
-        // 4) 화면 중앙 hit-test
-        //  - 평면: 추적 중 + 다른 평면에 병합되지 않음 + 다각형 내부
-        //  - 깊이(표면): 같은 시선에 평면이 있고, 그 평면보다 0~1 m 앞(=물체 윗면)일 때만 채택.
-        //    무늬 없는 바닥 등에서 깊이 값이 카메라 바로 앞으로 튀는 오류를 걸러낸다.
-        //  - 카메라 20 cm 이내 결과는 버림
+        // 4) 화면 중앙 hit-test — 우선순위: 평면 위 물체 표면(깊이) > 평면 > 깊이 단독 > 특징점
+        //  - 평면: 추적 중 + 병합되지 않음 + 다각형 내부
+        //  - 깊이: 평면과 함께 잡히면 평면보다 0~1 m 앞일 때만(물체 윗면). 평면이 없으면 카메라에서 30 cm 이상일 때 채택
+        //    (카메라 바로 앞으로 튀는 오측정 방지 — 이후 2 cm 안정도 검사로 한 번 더 거름)
+        //  - 특징점: 표면 방향이 추정된 점만, 최후 수단
         var planeHit: HitResult? = null
         var depthHit: HitResult? = null
+        var pointHit: HitResult? = null
         for (h in frame.hitTest(viewW / 2f, viewH / 2f)) {
             if (h.distance < MIN_HIT_DIST) continue
             val tr = h.trackable
             if (planeHit == null && tr is Plane && tr.trackingState == TrackingState.TRACKING && tr.subsumedBy == null && tr.isPoseInPolygon(h.hitPose)) planeHit = h
             if (depthEnabled && depthHit == null && tr is DepthPoint && tr.trackingState == TrackingState.TRACKING) depthHit = h
+            if (pointHit == null && tr is Point && tr.trackingState == TrackingState.TRACKING && tr.orientationMode == Point.OrientationMode.ESTIMATED_SURFACE_NORMAL) pointHit = h
         }
         val ph = planeHit; val dh = depthHit
-        val hit: HitResult? = if (ph != null && dh != null && (ph.distance - dh.distance) in -0.03f..1.0f) dh else ph
+        val hit: HitResult? = when {
+            ph != null && dh != null -> if ((ph.distance - dh.distance) in -0.03f..1.0f) dh else ph
+            ph != null -> ph
+            dh != null && dh.distance >= MIN_DEPTH_ONLY_DIST -> dh
+            else -> pointHit
+        }
         if (hit != null) {
             val t = hit.hitPose.translation
             recentHits.addLast(t); if (recentHits.size > STABLE_N) recentHits.removeFirst()
@@ -401,11 +409,11 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         // 6) 상태/안내
         val status = when {
             hit == null && pts.isNotEmpty() -> "표적이 평면을 벗어났습니다 — 측정할 표면을 비추세요"
-            hit == null -> "평면을 찾는 중… 휴대폰을 천천히 좌우로 움직이세요"
+            hit == null -> "표면을 찾는 중… 휴대폰을 천천히 좌우로 움직이세요"
             !ready -> "평면 인식 중… 잠시 유지하세요"
             chain.isEmpty() -> "시작점에 표적을 맞추고 탭하세요"
             else -> "종료점에 표적을 맞추고 탭하세요"
-        } + if (hit != null && ready) (if (hitOnSurface) " · 표면" else " · 평면") else ""
+        } + if (hit != null && ready) (when { hitOnSurface -> " · 표면"; hit.trackable is Point -> " · 특징점"; else -> " · 평면" }) else ""
         val camToHit = if (hp != null) dist(cp, hp) else 0f
         val light = frame.lightEstimate
         val dark = light.state == com.google.ar.core.LightEstimate.State.VALID && light.pixelIntensity < 0.12f
@@ -413,7 +421,7 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
             speed > 0.6f -> "카메라가 흔들립니다 — 천천히 움직이세요"
             camToHit > FAR_WARN_M -> "측정점이 %.1fm 떨어져 있어 오차가 커질 수 있습니다. 가까이 가세요".format(camToHit)
             dark -> "조명이 어둡습니다 — 인식이 불안정할 수 있습니다"
-            noHitFrames > 300 -> "평면을 찾지 못하고 있습니다 — 무늬 없는 흰 벽·유리·반사면은 인식이 어렵습니다"
+            noHitFrames > 150 -> "표면을 찾지 못하고 있습니다 — 1~2 m 안으로 다가가 휴대폰을 좌우로 천천히 움직이세요. 흰 벽·유리·얇은 모서리는 인식이 어렵습니다"
             else -> ""
         }
         postStatus(status, ready, hint)
@@ -653,6 +661,7 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         private const val READY_FRAMES = 15
         private const val STABLE_N = 8
         private const val MIN_HIT_DIST = 0.2f
+        private const val MIN_DEPTH_ONLY_DIST = 0.3f
         private const val FAR_WARN_M = 3.0f
         private const val RING = 40
         private val WHITE = floatArrayOf(1f, 1f, 1f, 1f)
