@@ -98,7 +98,8 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
     private var readyFrames = 0
     private var noHitFrames = 0
     @Volatile private var depthEnabled = false   // 깊이 인식(Depth API) 사용 여부
-    private var hitOnSurface = false             // 현재 표적이 물체 표면(깊이)인지 평면인지
+    private var hitOnSurface = false
+    private val recentHits = ArrayDeque<FloatArray>()  // 최근 표적 위치(안정도 판정)
     private var prevCam: FloatArray? = null
     private var prevTs = 0L
     private var speed = 0f
@@ -309,22 +310,36 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
             }
         }
 
-        // 4) 화면 중앙 hit-test: 추적 중인 평면의 다각형 내부만 허용
-        var hit: HitResult? = null
+        // 4) 화면 중앙 hit-test
+        //  - 평면: 추적 중 + 다른 평면에 병합되지 않음 + 다각형 내부
+        //  - 깊이(표면): 같은 시선에 평면이 있고, 그 평면보다 0~1 m 앞(=물체 윗면)일 때만 채택.
+        //    무늬 없는 바닥 등에서 깊이 값이 카메라 바로 앞으로 튀는 오류를 걸러낸다.
+        //  - 카메라 20 cm 이내 결과는 버림
+        var planeHit: HitResult? = null
+        var depthHit: HitResult? = null
         for (h in frame.hitTest(viewW / 2f, viewH / 2f)) {
+            if (h.distance < MIN_HIT_DIST) continue
             val tr = h.trackable
-            if (h.distance <= 0.05f) continue
-            // 결과는 카메라에서 가까운 순. 깊이 인식이 켜져 있으면 가장 가까운 실제 표면(DepthPoint)을 우선 사용
-            if (depthEnabled && tr is DepthPoint && tr.trackingState == TrackingState.TRACKING) { hit = h; break }
-            if (tr is Plane && tr.trackingState == TrackingState.TRACKING && tr.isPoseInPolygon(h.hitPose)) { hit = h; break }
+            if (planeHit == null && tr is Plane && tr.trackingState == TrackingState.TRACKING && tr.subsumedBy == null && tr.isPoseInPolygon(h.hitPose)) planeHit = h
+            if (depthEnabled && depthHit == null && tr is DepthPoint && tr.trackingState == TrackingState.TRACKING) depthHit = h
         }
+        val ph = planeHit; val dh = depthHit
+        val hit: HitResult? = if (ph != null && dh != null && (ph.distance - dh.distance) in -0.03f..1.0f) dh else ph
         if (hit != null) {
-            lastHit = hit; lastHitPos = hit.hitPose.translation
+            val t = hit.hitPose.translation
+            recentHits.addLast(t); if (recentHits.size > STABLE_N) recentHits.removeFirst()
+            lastHit = hit; lastHitPos = t
             readyFrames++; noHitFrames = 0
         } else {
+            recentHits.clear()
             lastHit = null; lastHitPos = null; readyFrames = 0; noHitFrames++
         }
-        ready = readyFrames >= READY_FRAMES
+        // 최근 위치가 2 cm 이내로 모여 있어야(표적이 안정) 측정 허용
+        val spread = if (recentHits.size < STABLE_N) Float.MAX_VALUE else {
+            val m = FloatArray(3); recentHits.forEach { for (i in 0..2) m[i] += it[i] / recentHits.size }
+            recentHits.maxOf { dist(it, m) }
+        }
+        ready = readyFrames >= READY_FRAMES && spread < 0.02f
         hitOnSurface = hit?.trackable is DepthPoint
 
         // 5) 그리기: 측정선, 점, 진행 중 미리보기선, 레티클
@@ -387,7 +402,8 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         var liveText: String? = null
         if (last != null && hp != null) {
             val d = dist(last.pos, hp)
-            liveText = Units.format(d.toDouble(), unit, dec)
+            val dyM = kotlin.math.abs(last.pos[1] - hp[1])
+            liveText = Units.format(d.toDouble(), unit, dec) + if (dyM >= 0.05f) " (높이차 ${Units.format(dyM.toDouble(), unit, 0)})" else ""
             if (d >= 0.005f) project(floatArrayOf((last.pos[0] + hp[0]) / 2, (last.pos[1] + hp[1]) / 2, (last.pos[2] + hp[2]) / 2))?.let {
                 labels += Label(it[0], it[1], liveText, true)
             }
@@ -597,6 +613,8 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
 
     companion object {
         private const val READY_FRAMES = 15
+        private const val STABLE_N = 8
+        private const val MIN_HIT_DIST = 0.2f
         private const val FAR_WARN_M = 3.0f
         private const val RING = 40
         private val WHITE = floatArrayOf(1f, 1f, 1f, 1f)
