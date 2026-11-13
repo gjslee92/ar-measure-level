@@ -21,6 +21,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("useDepth", true)
         set(v) = sp.edit().putBoolean("useDepth", v).apply()
 
+    /** AR 측정 방식: dist | vert | horiz */
+    var measureMode: String
+        get() = (sp.getString("measureMode", "dist") ?: "dist").takeIf { it in listOf("dist", "vert", "horiz") } ?: "dist"
+        set(v) = sp.edit().putString("measureMode", v).apply()
+
     var savePhoto: Boolean
         get() = sp.getBoolean("savePhoto", true)
         set(v) = sp.edit().putBoolean("savePhoto", v).apply()

@@ -27,7 +27,8 @@ object CsvExporter {
                 if (segs != null) for (k in 0 until segs.length()) {
                     parts += "구간${k + 1}=" + String.format(Locale.US, "%.${decimals}f", Units.convert(segs.getJSONObject(k).getDouble("lengthM"), r.unit)) + r.unit
                 }
-                listOf("${i + 1}", dateFmt.format(d), timeFmt.format(d), "길이",
+                val modeName = detail.optString("modeLabel", "거리").ifEmpty { "거리" }
+                listOf("${i + 1}", dateFmt.format(d), timeFmt.format(d), if (modeName == "거리") "길이" else "길이($modeName)",
                     String.format(Locale.US, "%.${decimals}f", Units.convert(r.value, r.unit)), r.unit,
                     "${segs?.length() ?: 0}개 구간" + if (parts.isNotEmpty()) ": " + parts.joinToString(" / ") else "", r.note)
             } else {

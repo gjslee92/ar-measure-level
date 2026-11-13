@@ -75,11 +75,14 @@ class RecordDetailActivity : AppCompatActivity() {
         row("측정 종류", if (r.type == MeasureRecord.TYPE_LENGTH) "길이 (AR)" else "각도 (수평기)")
         row("날짜 · 시간", Format.dateTime(r.createdAt))
         if (r.type == MeasureRecord.TYPE_LENGTH) {
+            row("측정 방식", when (d.optString("mode", "dist")) { "vert" -> "높이(수직)"; "horiz" -> "수평 거리"; else -> "직선 거리" })
             row("합계", Units.format(r.value, r.unit, dec))
             val segs = d.optJSONArray("segments")
             if (segs != null) for (i in 0 until segs.length()) {
-                val len = segs.getJSONObject(i).getDouble("lengthM")
-                row("구간 ${i + 1}", "${Units.format(len, r.unit, dec)}  (${Units.format(len, "mm", 1)})")
+                val sj = segs.getJSONObject(i)
+                val len = sj.getDouble("lengthM")
+                val extra = if (sj.has("dist3dM")) "\n직선 ${Units.format(sj.getDouble("dist3dM"), r.unit, dec)} · 수직 ${Units.format(sj.getDouble("verticalM"), r.unit, dec)} · 수평 ${Units.format(sj.getDouble("horizontalM"), r.unit, dec)}" else ""
+                row("구간 ${i + 1}", "${Units.format(len, r.unit, dec)}  (${Units.format(len, "mm", 1)})$extra")
             }
         } else {
             row("모드", d.optString("modeLabel"))

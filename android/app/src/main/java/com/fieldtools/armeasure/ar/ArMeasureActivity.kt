@@ -99,6 +99,8 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
     private var noHitFrames = 0
     @Volatile private var depthEnabled = false   // 깊이 인식(Depth API) 사용 여부
     private var hitOnSurface = false
+    /** 측정 방식: dist = 직선거리, vert = 수직 높이, horiz = 수평 거리 (ARCore 월드 Y축 = 중력 반대 방향) */
+    @Volatile private var mode = "dist"
     private val recentHits = ArrayDeque<FloatArray>()  // 최근 표적 위치(안정도 판정)
     private var prevCam: FloatArray? = null
     private var prevTs = 0L
@@ -149,6 +151,18 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         b.btnUndo.setOnClickListener { glTasks.add { undoGl() } }
         b.btnNewSeg.setOnClickListener { glTasks.add { newChainGl() } }
         b.btnReset.setOnClickListener { glTasks.add { resetGl() } }
+        mode = prefs.measureMode
+        b.btnMode.text = modeLabel()
+        b.btnMode.setOnClickListener {
+            mode = when (mode) { "dist" -> "vert"; "vert" -> "horiz"; else -> "dist" }
+            prefs.measureMode = mode
+            b.btnMode.text = modeLabel()
+            toast(when (mode) {
+                "vert" -> "높이 모드: 두 점의 수직 높이만 잽니다 (바닥 점이 옆으로 벗어나도 OK)"
+                "horiz" -> "수평 모드: 높이 차이를 빼고 바닥 기준 수평 거리만 잽니다"
+                else -> "거리 모드: 두 점 사이 직선거리"
+            })
+        }
         b.btnUnit.setOnClickListener { prefs.unit = Units.next(prefs.unit); toast("단위: ${prefs.unit}") }
         b.btnSave.setOnClickListener { requestSave() }
     }
@@ -354,6 +368,18 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         val last = chain.lastOrNull()
         val hp = lastHitPos
         if (last != null && hp != null) shapes.draw(vp, last.pos + hp, GLES20.GL_LINES, ACCENT, 5f)
+        if (mode != "dist") {
+            // 높이/수평 모드: 높은 점에서 수직으로 내린 선 + 수평선(직각 보조선)
+            val pairs = segs.map { it.a to it.b } + (if (last != null && hp != null) listOf(last.pos to hp) else emptyList())
+            val guide = FloatArray(pairs.size * 12)
+            pairs.forEachIndexed { i, (p, q) ->
+                val hi = if (p[1] >= q[1]) p else q; val lo = if (hi === p) q else p
+                val corner = floatArrayOf(hi[0], lo[1], hi[2])
+                System.arraycopy(hi, 0, guide, i * 12, 3); System.arraycopy(corner, 0, guide, i * 12 + 3, 3)
+                System.arraycopy(corner, 0, guide, i * 12 + 6, 3); System.arraycopy(lo, 0, guide, i * 12 + 9, 3)
+            }
+            if (guide.isNotEmpty()) shapes.draw(vp, guide, GLES20.GL_LINES, OK, 4f)
+        }
         val pts = chains.flatten()
         if (pts.isNotEmpty()) {
             val arr = FloatArray(pts.size * 3)
@@ -401,10 +427,13 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         }
         var liveText: String? = null
         if (last != null && hp != null) {
-            val d = dist(last.pos, hp)
-            val dyM = kotlin.math.abs(last.pos[1] - hp[1])
-            liveText = Units.format(d.toDouble(), unit, dec) + if (dyM >= 0.05f) " (높이차 ${Units.format(dyM.toDouble(), unit, 0)})" else ""
-            if (d >= 0.005f) project(floatArrayOf((last.pos[0] + hp[0]) / 2, (last.pos[1] + hp[1]) / 2, (last.pos[2] + hp[2]) / 2))?.let {
+            val d = valueOf(last.pos, hp)
+            val dyM = vertOf(last.pos, hp)
+            liveText = when (mode) {
+                "dist" -> Units.format(d.toDouble(), unit, dec) + if (dyM >= 0.05f) " (높이차 ${Units.format(dyM.toDouble(), unit, 0)})" else ""
+                else -> "${modeLabel()} " + Units.format(d.toDouble(), unit, dec)
+            }
+            if (dist(last.pos, hp) >= 0.005f) project(floatArrayOf((last.pos[0] + hp[0]) / 2, (last.pos[1] + hp[1]) / 2, (last.pos[2] + hp[2]) / 2))?.let {
                 labels += Label(it[0], it[1], liveText, true)
             }
         } else if (last != null) liveText = "표적을 평면에 맞추세요"
@@ -420,13 +449,21 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
     }
 
     // ---------------- 측정 로직 (GL 스레드) ----------------
-    data class Seg(val chain: Int, val a: FloatArray, val b: FloatArray, val len: Float)
+    data class Seg(val chain: Int, val a: FloatArray, val b: FloatArray, val len: Float, val d3: Float, val vert: Float, val horiz: Float)
+
+    private fun vertOf(a: FloatArray, b: FloatArray) = kotlin.math.abs(a[1] - b[1])
+    private fun horizOf(a: FloatArray, b: FloatArray) = kotlin.math.hypot(a[0] - b[0], a[2] - b[2])
+    private fun valueOf(a: FloatArray, b: FloatArray) = when (mode) { "vert" -> vertOf(a, b); "horiz" -> horizOf(a, b); else -> dist(a, b) }
+    private fun modeLabel(m: String = mode) = when (m) { "vert" -> "높이"; "horiz" -> "수평"; else -> "거리" }
     data class Label(val x: Float, val y: Float, val text: String, val live: Boolean)
 
     private fun segmentsGl(): List<Seg> {
         val out = mutableListOf<Seg>()
         chains.forEachIndexed { ci, c ->
-            for (i in 1 until c.size) out += Seg(ci, c[i - 1].pos.copyOf(), c[i].pos.copyOf(), dist(c[i - 1].pos, c[i].pos))
+            for (i in 1 until c.size) {
+                val a = c[i - 1].pos.copyOf(); val b = c[i].pos.copyOf()
+                out += Seg(ci, a, b, valueOf(a, b), dist(a, b), vertOf(a, b), horizOf(a, b))
+            }
         }
         return out
     }
@@ -505,7 +542,7 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         val segs = segmentsGl()
         val unit = prefs.unit; val dec = prefs.decimals
         val total = segs.sumOf { it.len.toDouble() }
-        val totals = if (segs.isEmpty()) "" else "마지막 ${Units.format(segs.last().len.toDouble(), unit, dec)} · ${segs.size}개 구간 · 합계 ${Units.format(total, unit, dec)}"
+        val totals = (if (mode != "dist") "[${modeLabel()} 모드] " else "") + if (segs.isEmpty()) "" else "마지막 ${Units.format(segs.last().len.toDouble(), unit, dec)} · ${segs.size}개 구간 · 합계 ${Units.format(total, unit, dec)}"
         val big = liveText ?: if (segs.isEmpty()) "-" else Units.format(total, unit, dec)
         runOnUiThread {
             if (b.live.text.toString() != big) b.live.text = big
@@ -556,10 +593,11 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         segs.forEach { sg ->
             arr.put(JSONObject().apply {
                 put("chain", sg.chain); put("lengthM", sg.len.toDouble())
+                put("dist3dM", sg.d3.toDouble()); put("verticalM", sg.vert.toDouble()); put("horizontalM", sg.horiz.toDouble())
                 put("a", JSONArray(sg.a.map { it.toDouble() })); put("b", JSONArray(sg.b.map { it.toDouble() }))
             })
         }
-        val detail = JSONObject().apply { put("segments", arr); put("anchors", true); put("depth", depthEnabled); put("platform", "android-arcore") }
+        val detail = JSONObject().apply { put("segments", arr); put("mode", mode); put("modeLabel", modeLabel()); put("anchors", true); put("depth", depthEnabled); put("platform", "android-arcore") }
         lifecycleScope.launch {
             var photoPath: String? = null
             if (bitmap != null) {
