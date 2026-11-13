@@ -17,7 +17,7 @@ object Format {
     fun meta(r: MeasureRecord): String {
         val d = try { JSONObject(r.detailJson) } catch (_: Exception) { JSONObject() }
         val base = if (r.type == MeasureRecord.TYPE_LENGTH) {
-            "${dateTime(r.createdAt)} · ${d.optString("modeLabel", "거리").ifEmpty { "거리" }} · ${d.optJSONArray("segments")?.length() ?: 0}개 구간${if (r.photoPath != null) " · 사진" else ""}"
+            "${dateTime(r.createdAt)} · ${d.optJSONArray("segments")?.length() ?: 0}개 구간${if (r.photoPath != null) " · 사진" else ""}"
         } else {
             "${dateTime(r.createdAt)} · ${d.optString("modeLabel")} · ${d.optString("state")}"
         }

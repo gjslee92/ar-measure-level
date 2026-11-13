@@ -45,15 +45,6 @@
                 android:text="AR 준비 중…"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold" />
-            <Button
-                android:id="@+id/btnMode"
-                style="@style/Widget.ARMeasure.ArButton.Save"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:minWidth="64dp"
-                android:text="거리"
-                android:textSize="15sp" />
             <ImageButton
                 android:id="@+id/btnClose"
                 android:layout_width="48dp"

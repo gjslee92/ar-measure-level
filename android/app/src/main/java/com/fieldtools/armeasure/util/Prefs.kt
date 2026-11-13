@@ -16,16 +16,6 @@ class Prefs(context: Context) {
         get() = sp.getInt("decimals", 1).coerceIn(0, 3)
         set(v) = sp.edit().putInt("decimals", v.coerceIn(0, 3)).apply()
 
-    /** AR 깊이 인식(Depth API) 사용 — 높이가 있는 물체 윗면 측정 정확도 향상 */
-    var useDepth: Boolean
-        get() = sp.getBoolean("useDepth", true)
-        set(v) = sp.edit().putBoolean("useDepth", v).apply()
-
-    /** AR 측정 방식: dist | vert | horiz */
-    var measureMode: String
-        get() = (sp.getString("measureMode", "dist") ?: "dist").takeIf { it in listOf("dist", "vert", "horiz") } ?: "dist"
-        set(v) = sp.edit().putString("measureMode", v).apply()
-
     var savePhoto: Boolean
         get() = sp.getBoolean("savePhoto", true)
         set(v) = sp.edit().putBoolean("savePhoto", v).apply()

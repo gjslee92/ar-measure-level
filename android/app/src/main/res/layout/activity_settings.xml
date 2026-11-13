@@ -22,8 +22,6 @@
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="소수점 자릿수" android:textColor="@color/text" />
                 <Spinner android:id="@+id/spDecimals" android:layout_width="120dp" android:layout_height="wrap_content" />
             </LinearLayout>
-            <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/swDepth" android:layout_width="match_parent" android:layout_height="56dp" android:text="깊이 인식 사용 (물체 윗면 측정)" android:textColor="@color/text" />
-            <TextView style="@style/Text.Body" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="12sp" android:text="켜면 키보드·상자처럼 높이가 있는 물체의 윗면에 바로 점을 찍습니다. 지원하지 않는 기기는 자동으로 바닥·벽 평면 기준으로 측정합니다." />
             <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/swPhoto" android:layout_width="match_parent" android:layout_height="56dp" android:text="길이 저장 시 사진도 함께 저장" android:textColor="@color/text" />
 
             <TextView style="@style/Text.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="수평기" android:textSize="16sp" />
