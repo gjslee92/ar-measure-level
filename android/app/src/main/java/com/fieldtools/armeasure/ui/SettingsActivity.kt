@@ -35,6 +35,8 @@ class SettingsActivity : AppCompatActivity() {
         spinner(b.spTheme, listOf("다크", "라이트", "시스템 설정"), listOf("dark", "light", "system"), prefs.theme) {
             if (it != prefs.theme) { prefs.theme = it; prefs.applyTheme() }
         }
+        b.swDepth.isChecked = prefs.useDepth
+        b.swDepth.setOnCheckedChangeListener { _, v -> prefs.useDepth = v }
         b.swPhoto.isChecked = prefs.savePhoto
         b.swPhoto.setOnCheckedChangeListener { _, v -> prefs.savePhoto = v }
         b.swVibrate.isChecked = prefs.vibrate

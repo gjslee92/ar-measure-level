@@ -40,6 +40,7 @@ import com.google.ar.core.ArCoreApk
 import com.google.ar.core.Config
 import com.google.ar.core.Frame
 import com.google.ar.core.HitResult
+import com.google.ar.core.DepthPoint
 import com.google.ar.core.Plane
 import com.google.ar.core.Session
 import com.google.ar.core.TrackingFailureReason
@@ -96,6 +97,8 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
     private var lastHitPos: FloatArray? = null
     private var readyFrames = 0
     private var noHitFrames = 0
+    @Volatile private var depthEnabled = false   // 깊이 인식(Depth API) 사용 여부
+    private var hitOnSurface = false             // 현재 표적이 물체 표면(깊이)인지 평면인지
     private var prevCam: FloatArray? = null
     private var prevTs = 0L
     private var speed = 0f
@@ -168,7 +171,11 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
                     focusMode = Config.FocusMode.AUTO
                     updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
                     lightEstimationMode = Config.LightEstimationMode.AMBIENT_INTENSITY
+                    // 깊이 인식: 지원 기기 + 설정 ON이면 물체 윗면 등 실제 표면에 점을 찍는다
+                    depthEnabled = prefs.useDepth && s.isDepthModeSupported(Config.DepthMode.AUTOMATIC)
+                    depthMode = if (depthEnabled) Config.DepthMode.AUTOMATIC else Config.DepthMode.DISABLED
                 }
+                if (prefs.useDepth && !depthEnabled) toast("이 기기는 깊이 인식을 지원하지 않아 평면 기준으로 측정합니다.")
                 s.configure(config)
                 session = s
             } catch (e: UnavailableUserDeclinedInstallationException) {
@@ -306,7 +313,10 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
         var hit: HitResult? = null
         for (h in frame.hitTest(viewW / 2f, viewH / 2f)) {
             val tr = h.trackable
-            if (tr is Plane && tr.trackingState == TrackingState.TRACKING && tr.isPoseInPolygon(h.hitPose) && h.distance > 0.05f) { hit = h; break }
+            if (h.distance <= 0.05f) continue
+            // 결과는 카메라에서 가까운 순. 깊이 인식이 켜져 있으면 가장 가까운 실제 표면(DepthPoint)을 우선 사용
+            if (depthEnabled && tr is DepthPoint && tr.trackingState == TrackingState.TRACKING) { hit = h; break }
+            if (tr is Plane && tr.trackingState == TrackingState.TRACKING && tr.isPoseInPolygon(h.hitPose)) { hit = h; break }
         }
         if (hit != null) {
             lastHit = hit; lastHitPos = hit.hitPose.translation
@@ -315,6 +325,7 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
             lastHit = null; lastHitPos = null; readyFrames = 0; noHitFrames++
         }
         ready = readyFrames >= READY_FRAMES
+        hitOnSurface = hit?.trackable is DepthPoint
 
         // 5) 그리기: 측정선, 점, 진행 중 미리보기선, 레티클
         val segs = segmentsGl()
@@ -353,7 +364,7 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
             !ready -> "평면 인식 중… 잠시 유지하세요"
             chain.isEmpty() -> "시작점에 표적을 맞추고 탭하세요"
             else -> "종료점에 표적을 맞추고 탭하세요"
-        }
+        } + if (hit != null && ready) (if (hitOnSurface) " · 표면" else " · 평면") else ""
         val camToHit = if (hp != null) dist(cp, hp) else 0f
         val light = frame.lightEstimate
         val dark = light.state == com.google.ar.core.LightEstimate.State.VALID && light.pixelIntensity < 0.12f
@@ -532,7 +543,7 @@ class ArMeasureActivity : AppCompatActivity(), GLSurfaceView.Renderer {
                 put("a", JSONArray(sg.a.map { it.toDouble() })); put("b", JSONArray(sg.b.map { it.toDouble() }))
             })
         }
-        val detail = JSONObject().apply { put("segments", arr); put("anchors", true); put("platform", "android-arcore") }
+        val detail = JSONObject().apply { put("segments", arr); put("anchors", true); put("depth", depthEnabled); put("platform", "android-arcore") }
         lifecycleScope.launch {
             var photoPath: String? = null
             if (bitmap != null) {
