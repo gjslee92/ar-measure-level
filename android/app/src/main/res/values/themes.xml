@@ -49,7 +49,7 @@
         <item name="android:insetBottom">0dp</item>
     </style>
 
-    <style name="Text.Title"><item name="android:textSize">20sp</item><item name="android:textStyle">bold</item><item name="android:textColor">@color/text</item></style>
-    <style name="Text.Body"><item name="android:textSize">14sp</item><item name="android:textColor">@color/muted</item><item name="android:lineSpacingMultiplier">1.3</item></style>
-    <style name="Text.Mono"><item name="android:fontFamily">monospace</item><item name="android:textStyle">bold</item><item name="android:textColor">@color/text</item></style>
+    <style name="Text.Title" parent=""><item name="android:textSize">20sp</item><item name="android:textStyle">bold</item><item name="android:textColor">@color/text</item></style>
+    <style name="Text.Body" parent=""><item name="android:textSize">14sp</item><item name="android:textColor">@color/muted</item><item name="android:lineSpacingMultiplier">1.3</item></style>
+    <style name="Text.Mono" parent=""><item name="android:fontFamily">monospace</item><item name="android:textStyle">bold</item><item name="android:textColor">@color/text</item></style>
 </resources>
