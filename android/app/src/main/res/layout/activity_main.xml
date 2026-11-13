@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            style="@style/Text.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="14dp"
+            android:text="AR 측정 · 수평기" />
+
+        <LinearLayout
+            android:id="@+id/cardMeasure"
+            android:layout_width="match_parent"
+            android:layout_height="132dp"
+            android:background="@drawable/bg_card_big"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="20dp">
+            <ImageView android:layout_width="64dp" android:layout_height="64dp" android:importantForAccessibility="no" android:src="@drawable/ic_ruler" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="길이 측정" android:textColor="@color/text" android:textSize="22sp" android:textStyle="bold" />
+                <TextView android:id="@+id/measureSub" style="@style/Text.Body" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="AR 카메라로 두 점 사이 거리 측정" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardLevel"
+            android:layout_width="match_parent"
+            android:layout_height="132dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_card_big"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="20dp">
+            <ImageView android:layout_width="64dp" android:layout_height="64dp" android:importantForAccessibility="no" android:src="@drawable/ic_level" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="디지털 수평기" android:textColor="@color/text" android:textSize="22sp" android:textStyle="bold" />
+                <TextView style="@style/Text.Body" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="수평 · 수직 · 각도 · 영점 보정" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="horizontal">
+            <Button android:id="@+id/btnHistory" android:layout_width="0dp" android:layout_height="64dp" android:layout_marginEnd="7dp" android:layout_weight="1" android:text="측정 기록" app:icon="@drawable/ic_list" />
+            <Button android:id="@+id/btnSettings" android:layout_width="0dp" android:layout_height="64dp" android:layout_marginStart="7dp" android:layout_weight="1" android:text="설정" app:icon="@drawable/ic_settings" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/Text.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="로그인 없이 바로 사용합니다. 측정 기록은 이 기기 내부에만 저장되며 외부로 전송되지 않습니다. 앱을 삭제하면 기록도 함께 삭제됩니다." />
+
+        <TextView
+            android:id="@+id/supportInfo"
+            style="@style/Text.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_card"
+            android:padding="14dp"
+            android:textSize="13sp" />
+    </LinearLayout>
+</ScrollView>

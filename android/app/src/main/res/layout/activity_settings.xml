@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:orientation="vertical">
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationIcon="@drawable/ic_back"
+        app:title="설정" />
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+            <TextView style="@style/Text.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="길이 측정" android:textSize="16sp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:gravity="center_vertical" android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="기본 단위" android:textColor="@color/text" />
+                <Spinner android:id="@+id/spUnit" android:layout_width="120dp" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:gravity="center_vertical" android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="소수점 자릿수" android:textColor="@color/text" />
+                <Spinner android:id="@+id/spDecimals" android:layout_width="120dp" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/swPhoto" android:layout_width="match_parent" android:layout_height="56dp" android:text="길이 저장 시 사진도 함께 저장" android:textColor="@color/text" />
+
+            <TextView style="@style/Text.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="수평기" android:textSize="16sp" />
+            <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:hint="'매우 정확한 수평' 기준 (°)">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/etT1" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="numberDecimal" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:hint="'거의 수평' 기준 (°)">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/etT2" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="numberDecimal" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:gravity="center_vertical" android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="센서 필터(떨림 억제)" android:textColor="@color/text" />
+                <Spinner android:id="@+id/spSmoothing" android:layout_width="160dp" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/swVibrate" android:layout_width="match_parent" android:layout_height="56dp" android:text="수평 도달 시 진동" android:textColor="@color/text" />
+            <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/swSound" android:layout_width="match_parent" android:layout_height="56dp" android:text="수평 도달 시 소리" android:textColor="@color/text" />
+            <Button android:id="@+id/btnResetCalib" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="센서 보정값 초기화" />
+
+            <TextView style="@style/Text.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="화면" android:textSize="16sp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:gravity="center_vertical" android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="테마" android:textColor="@color/text" />
+                <Spinner android:id="@+id/spTheme" android:layout_width="160dp" android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <TextView style="@style/Text.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="데이터" android:textSize="16sp" />
+            <Button android:id="@+id/btnDeleteAll" style="@style/Widget.ARMeasure.Button.Danger" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="측정 기록 전체 삭제" />
+            <TextView android:id="@+id/storageInfo" style="@style/Text.Body" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="12sp" />
+
+            <TextView style="@style/Text.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="앱 정보" android:textSize="16sp" />
+            <TextView android:id="@+id/appInfo" style="@style/Text.Body" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

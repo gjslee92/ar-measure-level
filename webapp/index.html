@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0f14">
+  <meta name="description" content="스마트폰 AR 길이 측정 및 디지털 수평기 (로그인 없음 · 오프라인 · 기기 내 저장)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>AR 측정 · 수평기</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 상단바 -->
+    <header class="topbar" id="topbar">
+      <button class="icon-btn" id="btnBack" aria-label="뒤로" hidden>
+        <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <h1 id="pageTitle">AR 측정 · 수평기</h1>
+      <span class="spacer"></span>
+      <span class="badge" id="offlineBadge" hidden>오프라인</span>
+    </header>
+
+    <main id="views">
+      <!-- 메인 -->
+      <section class="view" data-view="home">
+        <div class="home-grid">
+          <a class="card big" href="#/measure">
+            <div class="card-icon">
+              <svg viewBox="0 0 48 48"><rect x="4" y="18" width="40" height="12" rx="2"/><path d="M10 18v6M16 18v4M22 18v6M28 18v4M34 18v6M40 18v4"/></svg>
+            </div>
+            <div class="card-text"><h2>길이 측정</h2><p>AR 카메라로 두 점 사이 거리 측정</p></div>
+          </a>
+          <a class="card big" href="#/level">
+            <div class="card-icon">
+              <svg viewBox="0 0 48 48"><rect x="4" y="16" width="40" height="16" rx="8"/><circle cx="24" cy="24" r="4"/><path d="M18 16v16M30 16v16"/></svg>
+            </div>
+            <div class="card-text"><h2>디지털 수평기</h2><p>수평 · 수직 · 각도 · 영점 보정</p></div>
+          </a>
+          <div class="row2">
+            <a class="card small" href="#/history">
+              <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>측정 기록</span>
+            </a>
+            <a class="card small" href="#/settings">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>설정</span>
+            </a>
+          </div>
+        </div>
+        <p class="note">로그인 없이 바로 사용합니다. 측정 기록은 이 기기의 브라우저 저장소에만 저장되며 외부로 전송되지 않습니다.</p>
+        <div class="platform-box" id="platformBox"></div>
+      </section>
+
+      <!-- 길이 측정 (AR 시작 전 화면) -->
+      <section class="view" data-view="measure">
+        <div class="panel">
+          <h2>AR 길이 측정</h2>
+          <div class="status-line" id="arSupportStatus">AR 지원 여부 확인 중…</div>
+          <ol class="howto">
+            <li>밝은 곳에서, 무늬가 있는 바닥·책상·벽을 비추세요.</li>
+            <li>휴대폰을 천천히 좌우로 움직이면 평면이 인식됩니다.</li>
+            <li>가운데 표적을 측정 시작점에 맞추고 화면을 탭하세요.</li>
+            <li>종료점에 맞추고 다시 탭하면 거리가 표시됩니다. 계속 탭하면 연속 측정됩니다.</li>
+          </ol>
+          <button class="btn primary block" id="btnStartAR" disabled>AR 측정 시작</button>
+          <p class="warn small-text">측정값은 참고용입니다. 카메라와 대상 사이 거리, 조명, 표면 상태에 따라 오차가 생길 수 있으며 전문 측정 장비 수준의 정밀도를 보장하지 않습니다.</p>
+        </div>
+        <div class="panel" id="lastSessionPanel" hidden>
+          <h3>방금 측정한 결과</h3>
+          <div id="lastSessionList"></div>
+          <div class="btn-row">
+            <button class="btn" id="btnSaveLastSession">기록에 저장</button>
+            <button class="btn ghost" id="btnClearLastSession">지우기</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 수평기 -->
+      <section class="view" data-view="level">
+        <div class="level-mode">
+          <button class="seg" data-mode="auto">자동</button>
+          <button class="seg" data-mode="flat">평면(버블)</button>
+          <button class="seg" data-mode="edge">수평·수직(세움)</button>
+        </div>
+        <div class="level-stage" id="levelStage">
+          <!-- 평면 버블 -->
+          <div class="bubble-wrap" id="bubbleWrap">
+            <div class="bubble-ring r3"></div>
+            <div class="bubble-ring r2"></div>
+            <div class="bubble-ring r1"></div>
+            <div class="cross-h"></div><div class="cross-v"></div>
+            <div class="bubble" id="bubble"></div>
+          </div>
+          <!-- 세움(가장자리) 다이얼 -->
+          <div class="edge-wrap" id="edgeWrap" hidden>
+            <div class="edge-dial" id="edgeDial">
+              <div class="edge-line" id="edgeLine"></div>
+              <div class="edge-ref h"></div><div class="edge-ref v"></div>
+            </div>
+            <div class="tube" id="tube"><div class="tube-bubble" id="tubeBubble"></div><div class="tube-mark l"></div><div class="tube-mark r"></div></div>
+          </div>
+        </div>
+
+        <div class="readout" id="levelReadout">
+          <div class="state-chip" id="levelState">센서 대기</div>
+          <div class="big-angle" id="bigAngle">--.-°</div>
+          <div class="sub-angles">
+            <div><span class="lbl" id="lblA">좌우</span><span class="val" id="valA">--</span><span class="dir" id="dirA"></span></div>
+            <div><span class="lbl" id="lblB">전후</span><span class="val" id="valB">--</span><span class="dir" id="dirB"></span></div>
+            <div><span class="lbl">회전각</span><span class="val" id="valRot">--</span><span class="dir">0~360°</span></div>
+          </div>
+          <div class="lock-line" id="lockLine" hidden>고정 기준 <b id="lockRef"></b> · 차이 <b id="lockDelta"></b></div>
+          <div class="calib-line" id="calibLine"></div>
+        </div>
+
+        <div class="level-actions">
+          <button class="btn" id="btnZero">영점 설정</button>
+          <button class="btn" id="btnCalib2">정밀 보정(2단계)</button>
+          <button class="btn" id="btnResetCalib">보정 초기화</button>
+          <button class="btn" id="btnLock">각도 고정</button>
+          <button class="btn primary" id="btnSaveAngle">기록 저장</button>
+        </div>
+        <div class="sensor-error" id="sensorError" hidden></div>
+        <button class="btn primary block" id="btnSensorPermission" hidden>센서 사용 허용</button>
+      </section>
+
+      <!-- 기록 -->
+      <section class="view" data-view="history">
+        <div class="toolbar">
+          <div class="filter">
+            <button class="seg active" data-filter="all">전체</button>
+            <button class="seg" data-filter="length">길이</button>
+            <button class="seg" data-filter="angle">각도</button>
+          </div>
+          <span class="spacer"></span>
+          <button class="btn small" id="btnExportCsv">CSV 내보내기</button>
+        </div>
+        <ul class="record-list" id="recordList"></ul>
+        <p class="empty" id="recordEmpty" hidden>저장된 측정 기록이 없습니다.</p>
+        <button class="btn danger block" id="btnDeleteAll">전체 기록 삭제</button>
+        <p class="note">기록은 이 브라우저에만 저장됩니다. 브라우저 데이터 삭제·사이트 데이터 초기화 시 기록이 사라질 수 있으니 필요하면 CSV로 내보내 보관하세요.</p>
+      </section>
+
+      <!-- 기록 상세 -->
+      <section class="view" data-view="record">
+        <div class="panel" id="recordDetail"></div>
+      </section>
+
+      <!-- 설정 -->
+      <section class="view" data-view="settings">
+        <div class="panel form">
+          <h3>길이 측정</h3>
+          <label class="field"><span>기본 단위</span>
+            <select id="setUnit"><option value="mm">mm</option><option value="cm">cm</option><option value="m">m</option></select></label>
+          <label class="field"><span>소수점 자릿수</span>
+            <select id="setDecimals"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+          <label class="field switch"><span>측정 저장 시 사진도 함께 저장</span><input type="checkbox" id="setSavePhoto"></label>
+        </div>
+        <div class="panel form">
+          <h3>수평기</h3>
+          <label class="field"><span>'매우 정확' 기준 (°)</span><input type="number" id="setT1" min="0.05" max="5" step="0.05" inputmode="decimal"></label>
+          <label class="field"><span>'거의 수평' 기준 (°)</span><input type="number" id="setT2" min="0.1" max="10" step="0.1" inputmode="decimal"></label>
+          <label class="field"><span>센서 필터(떨림 억제)</span>
+            <select id="setSmoothing"><option value="low">약하게(빠른 반응)</option><option value="mid">보통</option><option value="high">강하게(안정)</option></select></label>
+          <label class="field switch"><span>수평 도달 시 진동</span><input type="checkbox" id="setVibrate"></label>
+          <label class="field switch"><span>수평 도달 시 소리</span><input type="checkbox" id="setSound"></label>
+          <button class="btn block" id="btnResetCalib2">센서 보정값 초기화</button>
+        </div>
+        <div class="panel form">
+          <h3>화면</h3>
+          <label class="field"><span>테마</span>
+            <select id="setTheme"><option value="dark">다크</option><option value="light">라이트</option><option value="system">시스템 설정 따름</option></select></label>
+        </div>
+        <div class="panel form">
+          <h3>데이터</h3>
+          <button class="btn danger block" id="btnDeleteAll2">측정 기록 전체 삭제</button>
+          <p class="note" id="storageInfo"></p>
+        </div>
+        <div class="panel form">
+          <h3>앱 정보</h3>
+          <p>AR 측정 · 수평기 (웹앱) <b id="appVersion"></b></p>
+          <p class="note">로그인·회원가입·광고·외부 전송이 없는 독립형 앱입니다. 측정값은 참고용이며 전문 측정 장비 수준의 정밀도를 보장하지 않습니다.</p>
+          <p class="note" id="capInfo"></p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- AR 오버레이 (WebXR dom-overlay 루트) -->
+  <div id="arOverlay" hidden>
+    <div class="ar-top">
+      <div class="ar-status" id="arStatus">평면을 찾는 중…</div>
+      <button class="icon-btn ar-close" id="btnArClose" aria-label="닫기">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="ar-hint" id="arHint"></div>
+    <div class="ar-labels" id="arLabels"></div>
+    <div class="ar-crosshair" id="arCrosshair"></div>
+    <div class="ar-bottom">
+      <div class="ar-total" id="arLive">-</div>
+      <div class="ar-total-sub" id="arTotal"></div>
+      <div class="ar-buttons">
+        <button class="btn ar" id="btnArUnit">단위</button>
+        <button class="btn ar" id="btnArUndo">되돌리기</button>
+        <button class="btn ar" id="btnArNewSeg">새 구간</button>
+        <button class="btn ar" id="btnArReset">초기화</button>
+        <button class="btn ar primary" id="btnArSave">저장</button>
+      </div>
+      <button class="ar-add" id="btnArAdd" aria-label="점 추가"><span></span></button>
+    </div>
+    <div class="toast" id="arToast" hidden></div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <div class="modal" id="modal" hidden>
+    <div class="modal-box">
+      <div id="modalBody"></div>
+      <div class="btn-row" id="modalBtns"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
