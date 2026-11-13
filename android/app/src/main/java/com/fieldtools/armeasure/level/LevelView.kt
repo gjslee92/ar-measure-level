@@ -75,7 +75,7 @@ class LevelView @JvmOverloads constructor(context: Context, attrs: AttributeSet?
 
     private fun drawEdge(c: Canvas) {
         val cx = width / 2f
-        val dialR = min(width, height * 0.72f) / 2f * 0.9f
+        val dialR = min(width.toFloat(), height * 0.72f) / 2f * 0.9f
         val dialCy = dialR + 8f
         c.save()
         // 기기 방향을 상쇄해 다이얼이 실제 세계 기준으로 똑바로 보이도록 회전
