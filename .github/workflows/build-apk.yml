@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -35,6 +35,19 @@ jobs:
           path: |
             android/app/build/outputs/apk/release/*.apk
             android/app/build/outputs/apk/debug/*.apk
+      - name: Publish APK to 'apk' branch (바로 내려받기용)
+        working-directory: .
+        run: |
+          mkdir /tmp/apkout
+          cp android/app/build/outputs/apk/release/app-release.apk /tmp/apkout/ARMeasureLevel-release.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk /tmp/apkout/ARMeasureLevel-debug.apk
+          cd /tmp/apkout
+          printf '# 최신 APK\n\n- ARMeasureLevel-release.apk : 설치용(권장)\n- ARMeasureLevel-debug.apk : 테스트용\n\n빌드 커밋: %s\n' "$GITHUB_SHA" > README.md
+          git init -q -b apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "APK build $GITHUB_SHA"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" apk
 
   webapp:
     runs-on: ubuntu-latest
