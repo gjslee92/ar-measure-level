@@ -12,8 +12,10 @@ android {
         applicationId = "com.fieldtools.armeasure"
         minSdk = 24          // ARCore 최소 지원 버전
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        // CI 빌드 번호를 버전에 반영 (어떤 APK인지 화면에서 확인 가능)
+        val run = (System.getenv("GITHUB_RUN_NUMBER") ?: "0").toInt()
+        versionCode = 100 + run
+        versionName = "1.0.$run"
     }
 
     signingConfigs {

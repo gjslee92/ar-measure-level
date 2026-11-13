@@ -52,7 +52,7 @@ class MainActivity : AppCompatActivity() {
         val sm = getSystemService(SENSOR_SERVICE) as? SensorManager
         val acc = sm?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null
         val gyro = sm?.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null
-        b.supportInfo.text = "이 기기 지원 현황\n· AR 길이 측정: $arText\n· 수평기 센서: ${if (acc) "가속도계 있음" else "없음 — 수평기 사용 불가"}${if (gyro) " · 자이로스코프 있음" else ""}\n· 기록 저장: 기기 내부 저장소"
+        b.supportInfo.text = "이 기기 지원 현황\n· AR 길이 측정: $arText\n· 수평기 센서: ${if (acc) "가속도계 있음" else "없음 — 수평기 사용 불가"}${if (gyro) " · 자이로스코프 있음" else ""}\n· 기록 저장: 기기 내부 저장소\n· 앱 버전: ${com.fieldtools.armeasure.BuildConfig.VERSION_NAME}"
         b.measureSub.text = if (a == ArCoreApk.Availability.UNSUPPORTED_DEVICE_NOT_CAPABLE) "이 기기는 AR 측정을 지원하지 않습니다" else "AR 카메라로 두 점 사이 거리 측정"
     }
 
